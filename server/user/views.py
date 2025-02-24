@@ -27,7 +27,7 @@ class DeleteUser(APIView):
             request.user.delete()
             return Response({'message':f'User {username} deleted successfully'}, status=status.HTTP_200_OK)
         
-        return Response({"error":"Wrong password."}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({"error":"Wrong password."}, status=status.HTTP_401_UNAUTHORIZED)
     
 class ChangePassword(APIView):
     permission_classes = [IsAuthenticated]
@@ -55,13 +55,17 @@ class ChangePassword(APIView):
             # new password is invalid
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         
-        return Response({'error':'Wrong password. Please try again.'}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({'current_password':'Wrong password. Please try again.'}, status=status.HTTP_401_UNAUTHORIZED)
 
 class ChangeEmail(APIView):
     permission_classes = [IsAuthenticated]
 
     def patch(self, request):
-        serializer = UserSerializer(instance=request.user, data=request.data, partial=True)
+        serializer = UserSerializer(
+            instance=request.user,
+            data={'email':request.data['new_email']},
+            partial=True
+        )
 
         if serializer.is_valid():
             serializer.save()
